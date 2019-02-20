@@ -1,5 +1,6 @@
 var User = require("../models/user");
 const bcrypt = require("bcrypt-nodejs");
+var jwt = require("../services/jwt");
 
 
 function pruebas(req,res){
@@ -27,7 +28,7 @@ function saveUser(req,res){
             {email:user.email},
             {nick:user.nick}
         ]}).exec((err,users)=>{
-            console.log(users)
+
             if (err) return res.status(500).send({message:"Error al comprobar Usuario"});
             if (users){
                 return res.status(200).send({message:"Usuario con email o nick ya existe"});
@@ -69,11 +70,19 @@ function loginUser(req,res){
 
             bcrypt.compare(password,user.password,(err,check)=>{
                 if (check){
-                    user.password=undefined;
-                    res.status(200).send({
-                        message:"Usuario Logeado correctemente",
-                        user:user
-                    });
+        
+                    if (params.gettoken){
+                        //generar y devler el token
+                        return res.status(200).send({
+                            token: jwt.createToken(user)
+                        })
+                    } else {
+                        user.password=undefined;
+                        res.status(200).send({
+                            message:"Usuario Logeado correctemente",
+                            user:user
+                        });
+                    }
                 } else {
                     return res.status(500).send({message:"Error al Logearse"});
                 }
