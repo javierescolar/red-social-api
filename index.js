@@ -8,7 +8,7 @@ mongoose.connect('mongodb://localhost:27017/red-social',{useNewUrlParser:true})
         console.log("Conexión a DB red social realizado correctamente");
         //creación del servidor
         app.listen(ENV.PORT,()=>{
-            console.log('Servidor corriendo en http://localhost'+ENV.PORT)
+            console.log('Servidor corriendo en http://localhost:'+ENV.PORT)
         });
     }).catch(err=> console.log(err));
 
