@@ -1,7 +1,7 @@
 var User = require("../models/user");
 const bcrypt = require("bcrypt-nodejs");
 var jwt = require("../services/jwt");
-
+var mongoose_pagination = require("mongoose-pagination");
 
 function pruebas(req,res){
     res.status(200).send({
@@ -60,6 +60,7 @@ function saveUser(req,res){
     }
 }
 
+
 function loginUser(req,res){
     var params = req.body,
         email = params.email.toLowerCase(),
@@ -72,7 +73,7 @@ function loginUser(req,res){
                 if (check){
         
                     if (params.gettoken){
-                        //generar y devler el token
+                        //generar y devolver el token
                         return res.status(200).send({
                             token: jwt.createToken(user)
                         })
@@ -97,8 +98,61 @@ function loginUser(req,res){
 
 }
 
+function getUser(req,res){
+    var id_user = req.params.id;
+    User.findById(id_user,(err,user)=>{
+        if (err) return res.status(500).send({message:"Error en la petición de usuario"});
+        if(!user) return res.status(404).send({message:"Usuario no existe"});
+        return res.status(200).send({user});
+    });
+}
+
+
+function getUsers(req,res){
+
+    var identity_user_id = req.user.sub;
+    var page=1;
+    var items_per_page = 3;
+
+    if(req.params.page){
+        page = req.params.page;
+    }
+
+    User.find().sort("_id").paginate(page,items_per_page,(err,users,total)=>{
+        if (err) return res.status(500).send({message:"Error en la petición de usuarios"});
+        if(!users) return res.status(404).send({message:"Usuarios no existen"});
+        return res.status(200).send({
+            users,
+            total,
+            pages: Math.ceil(total/items_per_page)
+        });
+    });
+}
+
+function updateUser(req,res){
+    var id_user = req.params.id;
+    var update = req.body;
+    delete update.password;
+
+    if(id_user != req.user.sub){
+        return res.status(401).send({message:"No tiene permisos para editar otro usuario"}); 
+    }
+
+    User.findOneAndUpdate(id_user,update,{new:true},(err,user)=>{
+        if (err) return res.status(500).send({message:"Error al actualizar usuario"});
+        if(!user) return res.status(404).send({message:"Usuarios no existen o no se ha podido actualizar"});
+        return res.status(200).send({
+            message:"Usuario actualizado",
+            user
+        });
+    })
+}
+
 module.exports = {
     pruebas,
     saveUser,
-    loginUser
+    loginUser,
+    getUser,
+    getUsers,
+    updateUser
 }
